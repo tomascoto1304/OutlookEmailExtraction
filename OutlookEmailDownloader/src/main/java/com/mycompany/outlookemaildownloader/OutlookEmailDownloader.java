@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 
 public class OutlookEmailDownloader {
 
-    private static final String USER_EMAIL = "jyu@bdconsultores.com";
+    private static final String USER_EMAIL = "USER_EMAIL";
     private static final String DOWNLOAD_DIR = "attachments/"; // Carpeta de descargas
 
     public static void fetchEmails() throws Exception {
