@@ -17,21 +17,21 @@ import java.util.Base64;
 
 public class OutlookEmailDownloader {
 
-    private static final String USER_EMAIL = "jcoto@bdconsultores.com"; // Correo de la cuenta
-    private static final String DOWNLOAD_DIR = "attachments/"; // Carpeta de descargas
+    private static final String USER_EMAIL = "USER_EMAIL"; // Account email
+    private static final String DOWNLOAD_DIR = "attachments/"; // Download directory
 
     public static void fetchEmails() throws Exception {
-        System.out.println("Iniciando la descarga de correos...");
+        System.out.println("Starting email download...");
 
-        // Obtener el token de acceso
+        // Get the access token
         String accessToken = Authenticator.getAccessToken();
         if (accessToken == null || accessToken.isEmpty()) {
-            System.out.println("ERROR: No se pudo obtener el token de acceso.");
+            System.out.println("ERROR: Unable to obtain access token.");
             return;
         }
-        System.out.println("Token obtenido correctamente.");
+        System.out.println("Token obtained successfully.");
 
-        // URL para obtener correos desde Microsoft Graph API
+        // URL to fetch emails from Microsoft Graph API
         String url = "https://graph.microsoft.com/v1.0/users/" + USER_EMAIL + "/messages?$select=subject,from,receivedDateTime,hasAttachments";
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
@@ -42,18 +42,18 @@ public class OutlookEmailDownloader {
             try (CloseableHttpResponse response = client.execute(get)) {
                 String responseBody = EntityUtils.toString(response.getEntity());
 
-                // Convertir respuesta JSON a objeto
+                // Convert JSON response to object
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(responseBody);
 
                 if (jsonNode.has("value")) {
                     for (JsonNode email : jsonNode.get("value")) {
                         System.out.println("--------------------------------------------------");
-                        System.out.println("Asunto: " + email.get("subject").asText());
-                        System.out.println("Remitente: " + email.get("from").get("emailAddress").get("address").asText());
-                        System.out.println("Fecha: " + email.get("receivedDateTime").asText());
+                        System.out.println("Subject: " + email.get("subject").asText());
+                        System.out.println("Sender: " + email.get("from").get("emailAddress").get("address").asText());
+                        System.out.println("Date: " + email.get("receivedDateTime").asText());
 
-                        // Si tiene adjuntos, descargarlos
+                        // If the email has attachments, download them
                         if (email.has("hasAttachments") && email.get("hasAttachments").asBoolean()) {
                             downloadAttachments(accessToken, email.get("id").asText());
                         }
@@ -78,8 +78,7 @@ public class OutlookEmailDownloader {
                 JsonNode jsonNode = mapper.readTree(responseBody);
 
                 Files.createDirectories(Paths.get(DOWNLOAD_DIR));
-                System.out.println("Carpeta de descargas creada en: " + new File(DOWNLOAD_DIR).getAbsolutePath());
-
+                System.out.println("Download folder created at: " + new File(DOWNLOAD_DIR).getAbsolutePath());
 
                 for (JsonNode attachment : jsonNode.get("value")) {
                     String fileName = attachment.get("name").asText();
