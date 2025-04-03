@@ -9,37 +9,36 @@ import org.apache.http.util.EntityUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 public class Authenticator {
-    // Credenciales de la aplicación en Azure
-    private static final String TENANT_ID = "9ab89989-e74e-44f6-acac-aa75eb8bde76";
-    private static final String CLIENT_ID = "7c5f3cd9-a09d-4f16-961d-bd100eacc8e5";
-    private static final String CLIENT_SECRET = "cbu8Q~U5rZJOOg398pyTzJzZh1BhkJWZ_6~.lahP";
+    // Azure application credentials
+    private static final String TENANT_ID = "TENANT_ID";
+    private static final String CLIENT_ID = "CLIENT_ID";
+    private static final String CLIENT_SECRET = "CLIENT_SECRET";
 
     public static String getAccessToken() throws Exception {
-        // URL para obtener el token de acceso en Azure
+        // URL to obtain the access token from Azure
         String tokenUrl = "https://login.microsoftonline.com/" + TENANT_ID + "/oauth2/v2.0/token";
 
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpPost post = new HttpPost(tokenUrl);
             post.setHeader("Content-Type", "application/x-www-form-urlencoded");
 
-            // Parámetros para obtener el token
+            // Parameters to obtain the token
             String body = "client_id=" + CLIENT_ID +
                           "&client_secret=" + CLIENT_SECRET +
                           "&scope=https://graph.microsoft.com/.default" +
                           "&grant_type=client_credentials";
             post.setEntity(new StringEntity(body));
 
-            // Ejecutar la solicitud
+            // Execute the request
             try (CloseableHttpResponse response = client.execute(post)) {
                 String responseBody = EntityUtils.toString(response.getEntity());
 
-                // Convertir respuesta JSON a objeto
+                // Convert JSON response to object
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(responseBody);
 
-                // Devolver el token de acceso
+                // Return the access token
                 return jsonNode.get("access_token").asText();
             }
         }
