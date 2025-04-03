@@ -17,13 +17,14 @@ import java.nio.file.Paths;
 
 public class OutlookEmailDownloader {
 
-    private static final String USER_EMAIL = "USER_EMAIL";
-    private static final String DOWNLOAD_DIR = "attachments/"; // Carpeta de descargas
+    private static final String USER_EMAIL = "USER_EMAIL"; // Account email
+    private static final String DOWNLOAD_DIR = "attachments/"; // Download directory
+
 
     public static void fetchEmails() throws Exception {
         System.out.println("Iniciando la descarga de correos...");
 
-        // Obtener el token de acceso
+       // Get the access token
         String accessToken = Authenticator.getAccessToken();
         if (accessToken == null || accessToken.isEmpty()) {
             System.out.println("ERROR: No se pudo obtener el token de acceso.");
@@ -31,7 +32,7 @@ public class OutlookEmailDownloader {
         }
         System.out.println("Token obtenido correctamente.");
 
-        // URL de la API de Microsoft Graph con $select para obtener información relevante
+        // URL to fetch emails from Microsoft Graph API
         String url = "https://graph.microsoft.com/v1.0/users/" + USER_EMAIL + "/messages?$select=subject,from,receivedDateTime,hasAttachments";
         System.out.println("URL de solicitud: " + url);
 
@@ -53,7 +54,7 @@ public class OutlookEmailDownloader {
                     return;
                 }
 
-                // Parsear la respuesta JSON
+                // Convert JSON response to object
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(responseBody);
 
@@ -65,7 +66,7 @@ public class OutlookEmailDownloader {
                         System.out.println("Remitente: " + email.get("from").get("emailAddress").get("address").asText());
                         System.out.println("Fecha: " + email.get("receivedDateTime").asText());
 
-                        // Verificar si el correo tiene adjuntos
+                       // If the email has attachments, download them
                         if (email.has("hasAttachments") && email.get("hasAttachments").asBoolean()) {
                             String messageId = email.get("id").asText();
                             System.out.println("Este correo tiene archivos adjuntos. Descargando...");
@@ -84,58 +85,62 @@ public class OutlookEmailDownloader {
     }
 
     private static void downloadAttachments(String accessToken, String messageId) {
-        String url = "https://graph.microsoft.com/v1.0/users/" + USER_EMAIL + "/messages/" + messageId + "/attachments";
-        System.out.println("URL de adjuntos: " + url);
+    // Construct the URL to fetch email attachments
+    String url = "https://graph.microsoft.com/v1.0/users/" + USER_EMAIL + "/messages/" + messageId + "/attachments";
+    System.out.println("Attachments URL: " + url);
 
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpGet get = new HttpGet(url);
-            get.setHeader("Authorization", "Bearer " + accessToken);
-            get.setHeader("Accept", "application/json");
+    try (CloseableHttpClient client = HttpClients.createDefault()) {
+        HttpGet get = new HttpGet(url);
+        get.setHeader("Authorization", "Bearer " + accessToken);
+        get.setHeader("Accept", "application/json");
 
-            try (CloseableHttpResponse response = client.execute(get)) {
-                int statusCode = response.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(response.getEntity());
+        try (CloseableHttpResponse response = client.execute(get)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            String responseBody = EntityUtils.toString(response.getEntity());
 
-                if (statusCode != 200) {
-                    System.out.println("ERROR al obtener adjuntos: Estado " + statusCode);
-                    System.out.println(responseBody);
-                    return;
-                }
+            // Check if the request was successful
+            if (statusCode != 200) {
+                System.out.println("ERROR fetching attachments: Status " + statusCode);
+                System.out.println(responseBody);
+                return;
+            }
 
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode jsonNode = mapper.readTree(responseBody);
-                if (jsonNode.has("value")) {
-                    Files.createDirectories(Paths.get(DOWNLOAD_DIR)); // Crear carpeta si no existe
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(responseBody);
+            if (jsonNode.has("value")) {
+                Files.createDirectories(Paths.get(DOWNLOAD_DIR)); // Create directory if it does not exist
 
-                    for (JsonNode attachment : jsonNode.get("value")) {
-                        if (attachment.has("contentBytes")) {
-                            String fileName = attachment.get("name").asText();
-                            String fileContent = attachment.get("contentBytes").asText();
-                            byte[] fileData = java.util.Base64.getDecoder().decode(fileContent);
+                for (JsonNode attachment : jsonNode.get("value")) {
+                    // Check if the attachment contains contentBytes (file data)
+                    if (attachment.has("contentBytes")) {
+                        String fileName = attachment.get("name").asText();
+                        String fileContent = attachment.get("contentBytes").asText();
+                        byte[] fileData = java.util.Base64.getDecoder().decode(fileContent);
 
-                            File file = new File(DOWNLOAD_DIR + fileName);
-                            try (FileOutputStream fos = new FileOutputStream(file)) {
-                                fos.write(fileData);
-                                System.out.println("Archivo descargado: " + fileName);
-                            }
+                        // Save the file in the designated download directory
+                        File file = new File(DOWNLOAD_DIR + fileName);
+                        try (FileOutputStream fos = new FileOutputStream(file)) {
+                            fos.write(fileData);
+                            System.out.println("File downloaded: " + fileName);
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-            System.out.println("Error al descargar adjuntos:");
-            e.printStackTrace();
         }
+    } catch (Exception e) {
+        System.out.println("Error downloading attachments:");
+        e.printStackTrace();
     }
+}
 
-    public static void main(String[] args) {
-        System.out.println("Ejecutando aplicacion...");
+public static void main(String[] args) {
+    System.out.println("Running application...");
 
-        try {
-            OutlookEmailDownloader.fetchEmails();
-        } catch (Exception e) {
-            System.out.println("Error al ejecutar fetchEmails:");
-            e.printStackTrace();
-        }
+    try {
+        // Fetch emails from Outlook and download attachments if available
+        OutlookEmailDownloader.fetchEmails();
+    } catch (Exception e) {
+        System.out.println("Error executing fetchEmails:");
+        e.printStackTrace();
     }
 }
