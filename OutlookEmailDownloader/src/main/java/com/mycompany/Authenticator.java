@@ -12,9 +12,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Authenticator {
-    private static final String TENANT_ID = "9ab89989-e74e-44f6-acac-aa75eb8bde76";
-    private static final String CLIENT_ID = "7c5f3cd9-a09d-4f16-961d-bd100eacc8e5";
-    private static final String CLIENT_SECRET = "cbu8Q~U5rZJOOg398pyTzJzZh1BhkJWZ_6~.lahP";
+    private static final String TENANT_ID = "TENANT_ID";
+    private static final String CLIENT_ID = "CLIENT_ID";
+    private static final String CLIENT_SECRET = "CLIENT_SECRET";
 
     public static String getAccessToken() throws Exception {
         String tokenUrl = "https://login.microsoftonline.com/" + TENANT_ID + "/oauth2/v2.0/token";
